@@ -12,17 +12,34 @@ import numpy as np
 
 import torch
 import time
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
+from ounoise import OUNoise
 import matplotlib.pyplot as plt
 from ddpg_agent import DDPGAgent
-from arguments import ParseArguments
+from arguments import parse_arguments
 from environment import NormalizedActions
 
 
+def evaluate(agent, env, args):
+    average_episode_reward = 0
+    for i in range(args.eval_episode):
+        state = env.reset()
+        episode_reward = 0
+        while True:
+            # env.render()
+            action = agent.action(state)
+            next_state, reward, done, info = env.step(action)
+            state = next_state
+            episode_reward += reward
+            if done:
+                break
+        # print("Evaluation {}, reward {}".format(i, episode_reward))
+        average_episode_reward += episode_reward
+    average_episode_reward /= args.eval_episode
+    return average_episode_reward
+
+
 def main():
-    args = ParseArguments()
+    args = parse_arguments()
     time_string = time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime())
     experiment_dir = os.path.join("experiment", args.experiment_name, time_string)
     if not os.path.exists(experiment_dir):
@@ -33,13 +50,15 @@ def main():
     torch.manual_seed(args.seed)
 
     print("Init environment ...")
-    env = gym.make("BipedalWalker-v2")
-    # env = NormalizedActions(gym.make("MountainCarContinuous-v0"))
+    # env = gym.make("BipedalWalker-v2")
+    env = NormalizedActions(gym.make("Pendulum-v0"))
     print("Init environment successfully ...")
 
-    print("Init agent ...")
+    print("Init agent & noise ...")
     agent = DDPGAgent(device, args, env)
-    print("Init agent successfully ...")
+    ou_noise = OUNoise(env.action_space, decay_period=int(args.max_total_step * 0.6))
+
+    print("Init agent & noise successfully ...")
 
     if args.load:
         print("Try to load model ...")
@@ -49,7 +68,8 @@ def main():
         except:
             print("Fail to load model ...")
 
-    # Statistics
+    # Training Statistics
+    total_training_time = 0
     total_step_list = []
     total_step_reward_list = []
     episode_reward_list = []
@@ -57,17 +77,24 @@ def main():
     episode_policy_loss_list = []
     episode_value_loss_list = []
 
+    # Evaluation Statistics
+    evaluate_total_step_list = []
+    evaluate_episode_reward_list = []
+
     total_step = 0
     episode = 0
-    start_time = time.time()
+    last_eval_step = 0
+    print("Training start ...")
     while True:
         episode_reward = 0
         episode_step = 0
         state = env.reset()
 
+        start_time = time.time()
         while True:
-            env.render()
-            action = agent.action_with_exploration(state, total_step)
+            # env.render()
+            action = agent.action(state)
+            action = ou_noise.get_action(action, total_step)
             next_state, reward, done, info = env.step(action)
             agent.memorize(state, action, reward, next_state, done)
             state = next_state
@@ -91,7 +118,8 @@ def main():
             if done:
                 end_time = time.time()
                 delta_time = end_time - start_time
-                fps = total_step / delta_time
+                total_training_time += delta_time
+                fps = total_step / total_training_time
                 episode += 1
                 print("Training time {}, episode {}, total step {}, episode step {}, episode reward {}, fps {}".format(
                     time.strftime('%H:%M:%S', time.gmtime(delta_time)), episode, total_step,
@@ -99,12 +127,8 @@ def main():
                 )
                 break
 
-        episode_reward_list.append(episode_reward)
-        total_step_list.append(total_step)
-        total_step_reward_list.append([total_step, episode_reward])
-        episode_step_list.append(episode_step)
-
         # Logging
+        episode_reward_list.append(episode_reward)
         fig1, ax1 = plt.subplots(figsize=(11, 8))
         ax1.plot(range(episode), episode_reward_list)
         ax1.set_title("Reward vs Episode")
@@ -114,6 +138,8 @@ def main():
         plt.clf()
         np.save("%s/episode_reward.npy" % experiment_dir, episode_reward_list)
 
+        total_step_list.append(total_step)
+        total_step_reward_list.append([total_step, episode_reward])
         fig2, ax2 = plt.subplots(figsize=(11, 8))
         ax2.plot(total_step_list, episode_reward_list)
         ax2.set_title("Reward vs Step")
@@ -123,20 +149,37 @@ def main():
         plt.clf()
         np.save("%s/step_reward.npy" % experiment_dir, total_step_reward_list)
 
+        episode_step_list.append(episode_step)
         fig3, ax3 = plt.subplots(figsize=(11, 8))
         ax3.plot(range(episode), episode_step_list)
         ax3.set_title("Episode length vs Episode")
         ax3.set_xlabel("Episode")
         ax3.set_ylabel("Episode length")
         plt.savefig('%s/episode_length_vs_episode.png' % (experiment_dir))
+        plt.clf()
         np.save("%s/episode_length.npy" % experiment_dir, episode_step_list)
+
+        # Begin evaluation
+        if total_step - last_eval_step >= args.eval_interval_step:
+            last_eval_step = total_step
+            evaluate_total_step_list.append(total_step)
+            evaluate_episode_reward_list.append(evaluate(agent, env, args))
+
+            fig, ax = plt.subplots(figsize=(11, 8))
+            ax.plot(evaluate_total_step_list, evaluate_episode_reward_list)
+            ax.set_title("Evaluation reward vs Step")
+            ax.set_xlabel("Step")
+            ax.set_ylabel("Evaluation reward")
+            plt.savefig('%s/evaluation_reward_vs_step.png' % (experiment_dir))
+            plt.clf()
+        # End evaluation
 
         if total_step >= args.max_total_step:
             break
 
     env.close()
 
-    print("Training ends ........ ")
+    print("Training ends ...")
 
 if __name__ == "__main__":
     main()

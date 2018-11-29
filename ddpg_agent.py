@@ -6,9 +6,9 @@ import os
 
 from torch import optim
 from torch import nn
-from ounoise import OUNoise
 from models import ValueNetwork, PolicyNetwork
 from replay_buffer import ReplayBuffer
+
 
 class DDPGAgent:
     def __init__(self, device, args, env):
@@ -47,17 +47,11 @@ class DDPGAgent:
         self.value_criterion = nn.MSELoss()
 
         self.replay_buffer = ReplayBuffer(self.replay_buffer_size)
-        self.ou_noise = OUNoise(self.env.action_space)
 
     def action(self, state):
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         action = self.policy_net(state)
         return action.detach().cpu().numpy()[0, 0]
-
-    def action_with_exploration(self, state, step):
-        action = self.action(state)
-        # print(action)
-        return self.ou_noise.get_action(action, step)
 
     def memorize(self, state, action, reward, next_state, done):
         self.replay_buffer.push(state, action, reward, next_state, done)
