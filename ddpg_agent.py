@@ -58,6 +58,8 @@ class DDPGAgent:
 
     def optimize(self, optimize_step=1):
         if len(self.replay_buffer) >= self.heatup:
+            # critic_loss = 0
+            # actor_loss = 0
             for i in range(optimize_step):
                 states, actions, rewards, next_states, dones = self.replay_buffer.sample(self.batch_size)
 
@@ -71,12 +73,12 @@ class DDPGAgent:
                 policy_loss = -policy_loss.mean()
 
                 next_actions = self.target_policy_net(next_states)
-                target_values = self.target_value_net(next_states, next_actions.detach())
+                target_values = self.target_value_net(next_states, next_actions).detach()
                 expected_values = rewards + (1.0 - dones) * self.gamma * target_values
                 # expected_value = torch.clamp(expected_value, min_value, max_value)
 
                 value = self.value_net(states, actions)
-                value_loss = self.value_criterion(value, expected_values.detach())
+                value_loss = self.value_criterion(value, expected_values)
 
                 self.policy_optimizer.zero_grad()
                 policy_loss.backward()
@@ -95,6 +97,8 @@ class DDPGAgent:
                     target_param.data.copy_(
                         target_param.data * (1.0 - self.soft_tau) + param.data * self.soft_tau
                     )
+                # actor_loss += policy_loss.data
+                # critic_loss += value_loss.data
 
     def save_model(self, path, total_step):
         policy_state_to_save = self.target_policy_net.state_dict()
