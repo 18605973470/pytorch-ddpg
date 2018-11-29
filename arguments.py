@@ -15,7 +15,7 @@ def parse_arguments():
                         help='Whether or not to load a trained model')
     parser.add_argument('--gpu', type=bool, default=True, metavar="G",
                         help='Whether to use gpu or not, meaningless if gpu is not available')
-    parser.add_argument('--save-interval-step', type=int, default=10000, metavar='SIS',
+    parser.add_argument('--save-interval-step', type=int, default=50000, metavar='SIS',
                         help='Steps between saving operation')
 
     # Hyper parameter
@@ -25,13 +25,13 @@ def parse_arguments():
                         help='Learning rate for policy network (default: 0.0001)')
     parser.add_argument('--gamma', type=float, default=0.99, metavar='GM',
                         help='Discount factor for rewards (default: 0.99)')
-    parser.add_argument('--soft-tau', type=float, default=0.01, metavar='ST',
+    parser.add_argument('--soft-tau', type=float, default=0.001, metavar='ST',
                         help='Updating rate for target network (default: 0.01)')
 
     # Replay buffer
     parser.add_argument('--batch-size', type=int, default=128, metavar='BS',
                         help='Training batch size')
-    parser.add_argument('--replay-buffer-size', type=int, default=100000, metavar='RBS',
+    parser.add_argument('--replay-buffer-size', type=int, default=1000000, metavar='RBS',
                         help='Length of replay buffer')
     parser.add_argument('--num-heatup', type=int, default=2000, metavar='NH',
                         help='Number of heats up')
@@ -39,7 +39,7 @@ def parse_arguments():
     # Training
     parser.add_argument('--max-episode-step', type=int, default=2000, metavar='MES',
                         help='Maximum length of an episode')
-    parser.add_argument('--max-total-step', type=int, default=100000, metavar='MTS',
+    parser.add_argument('--max-total-step', type=int, default=2000000, metavar='MTS',
                         help='Maximum training iteration')
 
     # Evaluation

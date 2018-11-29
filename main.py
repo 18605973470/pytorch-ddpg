@@ -35,6 +35,7 @@ def evaluate(agent, env, args):
         # print("Evaluation {}, reward {}".format(i, episode_reward))
         average_episode_reward += episode_reward
     average_episode_reward /= args.eval_episode
+    print("Evaluation : average reward {}".format(average_episode_reward))
     return average_episode_reward
 
 
@@ -50,8 +51,8 @@ def main():
     torch.manual_seed(args.seed)
 
     print("Init environment ...")
-    # env = gym.make("BipedalWalker-v2")
-    env = NormalizedActions(gym.make("Pendulum-v0"))
+    env = gym.make("BipedalWalker-v2")
+    # env = NormalizedActions(gym.make("Pendulum-v0"))
     print("Init environment successfully ...")
 
     print("Init agent & noise ...")
@@ -180,6 +181,7 @@ def main():
     env.close()
 
     print("Training ends ...")
+
 
 if __name__ == "__main__":
     main()
