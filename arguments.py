@@ -45,7 +45,7 @@ def parse_arguments():
                         help='Optimization times per step, used in agent.optimize()')
 
     # Evaluation
-    parser.add_argument('--eval-interval-step', type=int, default=3000, metavar="EIS",
+    parser.add_argument('--eval-interval-step', type=int, default=10000, metavar="EIS",
                         help='Steps between two evaluation operation')
     parser.add_argument('--eval-episode', type=int, default=1, metavar="EE",
                         help='Episodes per evaluation')
