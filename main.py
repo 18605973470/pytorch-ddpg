@@ -86,6 +86,9 @@ def main():
     episode = 0
     last_eval_step = 0
     print("Training start ...")
+
+    wall_time_start = time.time()
+    total_wall_time = 0
     while True:
         episode_reward = 0
         episode_step = 0
@@ -101,7 +104,7 @@ def main():
             state = next_state
             episode_reward += reward
 
-            agent.optimize()
+            agent.optimize(optimize_step=args.optimize_step)
 
             # Limitation at length of an episode
             episode_step += 1
@@ -121,9 +124,10 @@ def main():
                 delta_time = end_time - start_time
                 total_training_time += delta_time
                 fps = total_step / total_training_time
+                total_wall_time = end_time - wall_time_start
                 episode += 1
                 print("Training time {}, episode {}, total step {}, episode step {}, episode reward {}, fps {}".format(
-                    time.strftime('%H:%M:%S', time.gmtime(delta_time)), episode, total_step,
+                    time.strftime('%H:%M:%S', time.gmtime(total_wall_time)), episode, total_step,
                     episode_step, episode_reward, fps)
                 )
                 break
