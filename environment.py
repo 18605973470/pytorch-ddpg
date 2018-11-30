@@ -11,7 +11,8 @@ def create_env(env_id):
 
 class frame_stack(gym.Wrapper):
     def __init__(self, env):
-        super(self).__init__(env)
+        super().__init__(env=env)
+        self.env = env
         self.obs_norm = MaxMinFilter()
 
     def reset(self):
@@ -26,6 +27,8 @@ class frame_stack(gym.Wrapper):
         ob = self.obs_norm(ob)
         return ob, rew, done, info
 
+    def close(self):
+        self.env.close()
 
 class MaxMinFilter():
     def __init__(self):

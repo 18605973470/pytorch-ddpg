@@ -13,6 +13,8 @@ def parse_arguments():
                         help="Experiment name, which also stands for directory to save and load models")
     parser.add_argument('--load', default=False, metavar='L',
                         help='Whether or not to load a trained model')
+    parser.add_argument('--load-dir', default="ddpg_gym", metavar="LD",
+                        help='Directory to load models to continue experiments')
     parser.add_argument('--gpu', type=bool, default=True, metavar="G",
                         help='Whether to use gpu or not, meaningless if gpu is not available')
     parser.add_argument('--save-interval-step', type=int, default=50000, metavar='SIS',

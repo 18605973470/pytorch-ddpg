@@ -100,17 +100,17 @@ class DDPGAgent:
                 # actor_loss += policy_loss.data
                 # critic_loss += value_loss.data
 
-    def save_model(self, path, total_step):
+    def save_model(self, path, notes):
         policy_state_to_save = self.target_policy_net.state_dict()
         value_state_to_save = self.target_value_net.state_dict()
-        torch.save(policy_state_to_save, os.path.join(path, str(total_step) + '_policy.pkl'))
-        torch.save(value_state_to_save, os.path.join(path, str(total_step) + '_value.pkl'))
+        torch.save(policy_state_to_save, os.path.join(path, 'policy-{}.pkl'.format(notes)))
+        torch.save(value_state_to_save, os.path.join(path, 'value-{}.pkl'.format(notes)))
 
-    def load_model(self, path, total_step):
-        policy_state_to_load = torch.load(os.path.join(path, str(total_step) + '_policy.pkl'))
+    def load_model(self, path, notes):
+        policy_state_to_load = torch.load(os.path.join(path, 'policy-{}.pkl'.format(notes)))
         self.target_policy_net.load_state_dict(policy_state_to_load)
         self.policy_net.load_state_dict(policy_state_to_load)
 
-        value_state_to_load = torch.load(os.path.join(path, str(total_step) + '_value.pkl'))
+        value_state_to_load = torch.load(os.path.join(path, 'value-{}.pkl'.format(notes)))
         self.target_value_net.load_state_dict(value_state_to_load)
         self.value_net.load_state_dict(value_state_to_load)

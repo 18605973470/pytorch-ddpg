@@ -16,7 +16,7 @@ from ounoise import OUNoise
 import matplotlib.pyplot as plt
 from ddpg_agent import DDPGAgent
 from arguments import parse_arguments
-from environment import NormalizedActions
+from environment import create_env 
 
 
 def evaluate(agent, env, args):
@@ -24,7 +24,7 @@ def evaluate(agent, env, args):
     for i in range(args.eval_episode):
         state = env.reset()
         episode_reward = 0
-        while True:
+        for j in range(args.max_episode_step):
             # env.render()
             action = agent.action(state)
             next_state, reward, done, info = env.step(action)
@@ -41,8 +41,8 @@ def evaluate(agent, env, args):
 
 def main():
     args = parse_arguments()
-    time_string = time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime())
-    experiment_dir = os.path.join("experiment", args.experiment_name, time_string)
+    # time_string = time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime())
+    experiment_dir = os.path.join("experiment", args.experiment_name)
     if not os.path.exists(experiment_dir):
         os.makedirs(experiment_dir, exist_ok=True)
 
@@ -51,7 +51,12 @@ def main():
     torch.manual_seed(args.seed)
 
     print("Init environment ...")
-    env = gym.make("BipedalWalker-v2")
+    from torcs_wrapper import TorcsWrapper
+    env = TorcsWrapper(port=12345, noisy=True, throttle=0.20, control_dim = 1, k = 2.0)
+    print("\t Observation space {}".format(env.observation_space.shape))
+    print("\t Action space {}".format(env.action_space.shape))
+
+    # env = create_env("BipedalWalker-v2")
     # env = NormalizedActions(gym.make("Pendulum-v0"))
     print("Init environment successfully ...")
 
@@ -64,7 +69,7 @@ def main():
     if args.load:
         print("Try to load model ...")
         try:
-            agent.load_model(experiment_dir, 10000)
+            agent.load_model(args.load_dir, "last")
             print("Load model successfully ...")
         except:
             print("Fail to load model ...")
@@ -116,15 +121,16 @@ def main():
             if total_step >= args.max_total_step:
                 done = True
 
+            agent.save_model(experiment_dir, "last")
             if total_step % args.save_interval_step == 0:
-                agent.save_model(experiment_dir, total_step)
+                agent.save_model(experiment_dir, str(total_step))
 
             if done:
                 end_time = time.time()
                 delta_time = end_time - start_time
                 total_training_time += delta_time
                 fps = total_step / total_training_time
-                total_wall_time = end_time - wall_time_start
+                total_wall_time += (end_time - wall_time_start)
                 episode += 1
                 print("Training time {}, episode {}, total step {}, episode step {}, episode reward {}, fps {}".format(
                     time.strftime('%H:%M:%S', time.gmtime(total_wall_time)), episode, total_step,
