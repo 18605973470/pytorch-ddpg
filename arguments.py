@@ -6,6 +6,10 @@ import argparse
 def parse_arguments():
     parser = argparse.ArgumentParser(description="pytorch-ddpg")
 
+    # Mode
+    parser.add_argument('--mode', type=str, default="", metavar="M",
+                        help="Mode (train or eval)")
+
     # Other parameter
     parser.add_argument('--seed', type=int, default=123456789, metavar='S',
                         help="Random seed (default: 123456789)")
@@ -19,6 +23,12 @@ def parse_arguments():
                         help='Whether to use gpu or not, meaningless if gpu is not available')
     parser.add_argument('--save-interval-step', type=int, default=50000, metavar='SIS',
                         help='Steps between saving operation')
+
+    # Exploration parameter
+    parser.add_argument("--max-epsilon", type=float, default=1.0, metavar="MAE",
+                        help="Max epsilon in exploration")
+    parser.add_argument("--min-epsilon", type=float, default=0.01, metavar="MIE",
+                        help="Min epsilon in exploration")
 
     # Hyper parameter
     parser.add_argument('--value-lr', type=float, default=0.001, metavar='VLR',
