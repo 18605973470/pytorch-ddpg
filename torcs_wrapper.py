@@ -20,7 +20,7 @@ class TorcsWrapper:
         # self.action_space = gym.spaces.Box2D(len(self.steers))
 
         self.observation_space = gym.spaces.Box(low=-1, high=1, shape=[25])
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=[control_dim]) # steer
+        self.action_space = gym.spaces.Box(low=-0.5, high=0.5, shape=[control_dim]) # steer
 
     def reset(self, track_offset=0):
         relaunch = False

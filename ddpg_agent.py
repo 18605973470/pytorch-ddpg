@@ -11,7 +11,9 @@ from replay_buffer import ReplayBuffer
 
 
 class DDPGAgent:
-    def __init__(self, device, args, env):
+    def __init__(self, device, args, env, ou_noise):
+
+        self.noise = ou_noise
 
         # Hyper parameters
         self.value_lr = args.value_lr
@@ -52,6 +54,9 @@ class DDPGAgent:
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         action = self.policy_net(state)
         return action.detach().cpu().numpy()[0]
+
+    def noise_action(self, state, step):
+        return self.noise.add_noise(self.action(state), step)
 
     def memorize(self, state, action, reward, next_state, done):
         self.replay_buffer.push(state, action, reward, next_state, done)
@@ -107,6 +112,7 @@ class DDPGAgent:
         torch.save(value_state_to_save, os.path.join(path, 'value-{}.pkl'.format(notes)))
 
     def load_model(self, path, notes):
+        print(os.path.join(path, 'policy-{}.pkl'.format(notes)))
         policy_state_to_load = torch.load(os.path.join(path, 'policy-{}.pkl'.format(notes)))
         self.target_policy_net.load_state_dict(policy_state_to_load)
         self.policy_net.load_state_dict(policy_state_to_load)

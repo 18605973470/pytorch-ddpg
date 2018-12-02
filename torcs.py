@@ -81,7 +81,7 @@ class Torcs:
         sp = np.array(raw_obs['speedX'])
         # damage = np.array(obs['damage'])
 
-        reward = (sp / 100) * (np.cos(raw_obs["angle"]) - np.abs(raw_obs['trackPos'])- np.abs(action_torcs['steer']) * self.k)
+        reward = np.cos(raw_obs["angle"]) - np.abs(raw_obs['trackPos'])- np.abs(action_torcs['steer']) * self.k
                     # - sp * np.abs(action_torcs['steer'] - self.last_steer)
                     # - sp * np.abs(action_torcs['steer']) * 2 - sp * np.abs(action_torcs['steer'] - self.last_steer)
         # reward = sp*np.cos(raw_obs["angle"]) - sp * np.abs(raw_obs['trackPos'])
@@ -138,7 +138,7 @@ class Torcs:
             command += ' -vision'
         if self.noisy == True:
             command += ' -noisy'
-        self.torcs_proc = subprocess.Popen([command], shell=True, preexec_fn=os.setsid)
+        self.torcs_proc = subprocess.Popen([command], shell=True, preexec_fn=os.setsid, close_fds=True)
         time.sleep(1)
 
         # select track
