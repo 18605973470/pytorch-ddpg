@@ -39,7 +39,7 @@ def main():
     print("\t Action space {}".format(env.action_space.shape))
 
     # env = create_env("BipedalWalker-v2")
-    env = gym.make("Pendulum-v0")
+    # env = gym.make("Pendulum-v0")
     # print("Init environment successfully ...")
 
     print("Init agent & noise ...")

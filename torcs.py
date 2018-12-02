@@ -92,10 +92,10 @@ class Torcs:
         done = False
 
         # collision detection
-        # if obs['damage'] - obs_pre['damage'] > 0:
-        #     print("Collision")
-        #     reward = -200
-        #     done = True
+        if raw_obs['damage'] > 0:
+            print("Damaged")
+            reward = -1
+            done = True
 
         if abs(trackPos) > 0.9:
             print("Out of track")
@@ -194,25 +194,25 @@ class Torcs:
 
         if self.noisy == True:
             if np.random.random() < 0.05:
-                angle = angle * (1 + np.random.randint(-20, 20) / 100)
+                angle = angle * (1 + np.random.randint(-30, 30) / 100)
             else:
-                angle = angle * (1 + np.random.randint(-10, 10) / 100)
+                angle = angle * (1 + np.random.randint(-15, 15) / 100)
             # angle = angle
 
             if np.random.random() < 0.05:
-                track = track * (1 + np.random.randint(-20, 20, 19) / 100)
+                track = track * (1 + np.random.randint(-30, 30, 19) / 100)
             else:
-                track = track * (1 + np.random.randint(-10, 10, 19) / 100)
+                track = track * (1 + np.random.randint(-15, 15, 19) / 100)
 
             if np.random.random() < 0.05:
-                trackPos = trackPos * (1 + np.random.randint(-20, 20) / 100)
+                trackPos = trackPos * (1 + np.random.randint(-30, 30) / 100)
             else:
-                trackPos = trackPos * (1 + np.random.randint(-10, 10) / 100)
+                trackPos = trackPos * (1 + np.random.randint(-15, 15) / 100)
 
             if np.random.random() < 0.05:
-                opponents = opponents * (1 + np.random.randint(-20, 20, 36) / 100)
+                opponents = opponents * (1 + np.random.randint(-30, 30, 36) / 100)
             else:
-                opponents = opponents * (1 + np.random.randint(-10, 10, 36) / 100)
+                opponents = opponents * (1 + np.random.randint(-15, 15, 36) / 100)
 
         angle = np.clip(angle, -1, 1)
         track = np.clip(track, 0, 1)

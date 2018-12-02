@@ -53,10 +53,12 @@ class DDPGAgent:
     def action(self, state):
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         feature_vector, action = self.policy_net(state)
-        return action.detach().cpu().numpy()[0] #, feature_vector.detach()
+        return action.detach().cpu().numpy()[0], feature_vector.detach().cpu().numpy()[0]
 
     def noise_action(self, state, step):
-        return self.noise.add_noise(self.action(state), step)
+        action, feature_vector = self.action(state)
+        action = self.noise.add_noise(action, step)
+        return action, feature_vector
 
     def memorize(self, state, action, reward, next_state, done, feature_vector, next_feature_vector):
         self.replay_buffer.push(state, action, reward, next_state, done, feature_vector, next_feature_vector)
@@ -75,20 +77,21 @@ class DDPGAgent:
                 experience_actions = torch.FloatTensor(experience_actions).to(self.device)
                 experience_rewards = torch.FloatTensor(experience_rewards).unsqueeze(1).to(self.device)
                 experience_dones = torch.FloatTensor(np.float32(experience_dones)).unsqueeze(1).to(self.device)
-                # experience_feature_vector = torch.FloatTensor(np.float32(experience_feature_vector)).to(self.device)
-                # experience_next_feature_vector = torch.FloatTensor(np.float32(experience_next_feature_vector)).to(self.device)
+                experience_feature_vectors = torch.FloatTensor(np.float32(experience_feature_vector)).to(self.device)
+                experience_next_feature_vectors = torch.FloatTensor(np.float32(experience_next_feature_vector)).to(self.device)
 
                 current_feature_vectors, current_actions = self.policy_net(experience_states)
-                policy_loss = self.value_net(current_feature_vectors, current_actions) # TODO : experience_feature_vectors
+                # TODO : experience_feature_vectors current_feature_vectors
+                policy_loss = self.value_net(experience_feature_vectors, current_actions)
                 policy_loss = -policy_loss.mean()
 
                 current_target_next_feature_vectors, current_target_next_actions = self.target_policy_net(experience_next_states)
-                target_values = self.target_value_net(current_target_next_feature_vectors, # TODO :
+                target_values = self.target_value_net(experience_next_feature_vectors, # TODO :
                                                       current_target_next_actions).detach()
                 expected_values = experience_rewards + (1.0 - experience_dones) * self.gamma * target_values
                 # expected_value = torch.clamp(expected_value, min_value, max_value)
 
-                current_values = self.value_net(current_feature_vectors.detach(), experience_actions) # TODO :
+                current_values = self.value_net(experience_feature_vectors, experience_actions) # TODO :
                 value_loss = self.value_criterion(current_values, expected_values)
 
                 self.policy_optimizer.zero_grad()
