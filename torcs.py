@@ -192,27 +192,29 @@ class Torcs:
         trackPos = np.array(raw_obs['trackPos'], dtype=np.float32) / 1.
         opponents = np.array(raw_obs['opponents'], dtype=np.float32) / 200.
 
+        noise_percentage = 10
+        severe_noise_percentage = 20
         if self.noisy == True:
             if np.random.random() < 0.05:
-                angle = angle * (1 + np.random.randint(-30, 30) / 100)
+                angle = angle * (1 + np.random.randint(-severe_noise_percentage, severe_noise_percentage) / 100)
             else:
-                angle = angle * (1 + np.random.randint(-15, 15) / 100)
+                angle = angle * (1 + np.random.randint(-noise_percentage, noise_percentage) / 100)
             # angle = angle
 
             if np.random.random() < 0.05:
-                track = track * (1 + np.random.randint(-30, 30, 19) / 100)
+                track = track * (1 + np.random.randint(-severe_noise_percentage, severe_noise_percentage, 19) / 100)
             else:
-                track = track * (1 + np.random.randint(-15, 15, 19) / 100)
+                track = track * (1 + np.random.randint(-noise_percentage, noise_percentage, 19) / 100)
 
             if np.random.random() < 0.05:
-                trackPos = trackPos * (1 + np.random.randint(-30, 30) / 100)
+                trackPos = trackPos * (1 + np.random.randint(-severe_noise_percentage, severe_noise_percentage) / 100)
             else:
-                trackPos = trackPos * (1 + np.random.randint(-15, 15) / 100)
+                trackPos = trackPos * (1 + np.random.randint(-noise_percentage, noise_percentage) / 100)
 
             if np.random.random() < 0.05:
-                opponents = opponents * (1 + np.random.randint(-30, 30, 36) / 100)
+                opponents = opponents * (1 + np.random.randint(-severe_noise_percentage, severe_noise_percentage, 36) / 100)
             else:
-                opponents = opponents * (1 + np.random.randint(-15, 15, 36) / 100)
+                opponents = opponents * (1 + np.random.randint(-noise_percentage, noise_percentage, 36) / 100)
 
         angle = np.clip(angle, -1, 1)
         track = np.clip(track, 0, 1)

@@ -37,8 +37,8 @@ def train(agent, env, args, experiment_dir):
             # print(feature_vector)
             # action = ou_noise.add_noise(action, total_step)
             next_state, reward, done, info = env.step(action)
-            _, next_feature_vector = agent.action(next_state)
-            agent.memorize(state, action, reward, next_state, done, feature_vector, next_feature_vector)
+            # _, next_feature_vector = agent.action(next_state)
+            agent.memorize(state, action, reward, next_state, done, None, None) # feature_vector, next_feature_vector)
             state = next_state
             episode_reward += reward
 
