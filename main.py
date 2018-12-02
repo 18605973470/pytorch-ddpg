@@ -39,8 +39,8 @@ def main():
     print("\t Action space {}".format(env.action_space.shape))
 
     # env = create_env("BipedalWalker-v2")
-    # env = NormalizedActions(gym.make("Pendulum-v0"))
-    print("Init environment successfully ...")
+    env = gym.make("Pendulum-v0")
+    # print("Init environment successfully ...")
 
     print("Init agent & noise ...")
     ou_noise = OUNoise(env.action_space, min_epsilon=args.min_epsilon, max_epsilon=args.max_epsilon,

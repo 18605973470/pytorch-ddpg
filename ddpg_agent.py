@@ -32,9 +32,9 @@ class DDPGAgent:
         self.action_dim = self.env.action_space.shape[0]
         self.hidden_dim = 512
 
-        self.value_net = ValueNetwork(self.state_dim, self.action_dim, self.hidden_dim).to(self.device)
+        self.value_net = ValueNetwork(self.hidden_dim, self.action_dim, self.hidden_dim).to(self.device)
         self.policy_net = PolicyNetwork(self.state_dim, self.action_dim, self.hidden_dim).to(self.device)
-        self.target_value_net = ValueNetwork(self.state_dim, self.action_dim, self.hidden_dim).to(self.device)
+        self.target_value_net = ValueNetwork(self.hidden_dim, self.action_dim, self.hidden_dim).to(self.device)
         self.target_policy_net = PolicyNetwork(self.state_dim, self.action_dim, self.hidden_dim).to(self.device)
 
         for target_param, param in zip(self.target_value_net.parameters(), self.value_net.parameters()):
@@ -52,38 +52,44 @@ class DDPGAgent:
 
     def action(self, state):
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-        action = self.policy_net(state)
-        return action.detach().cpu().numpy()[0]
+        feature_vector, action = self.policy_net(state)
+        return action.detach().cpu().numpy()[0] #, feature_vector.detach()
 
     def noise_action(self, state, step):
         return self.noise.add_noise(self.action(state), step)
 
-    def memorize(self, state, action, reward, next_state, done):
-        self.replay_buffer.push(state, action, reward, next_state, done)
+    def memorize(self, state, action, reward, next_state, done, feature_vector, next_feature_vector):
+        self.replay_buffer.push(state, action, reward, next_state, done, feature_vector, next_feature_vector)
 
     def optimize(self, optimize_step=1):
+        critic_loss = 0
+        actor_loss = 0
         if len(self.replay_buffer) >= self.heatup:
-            # critic_loss = 0
-            # actor_loss = 0
             for i in range(optimize_step):
-                states, actions, rewards, next_states, dones = self.replay_buffer.sample(self.batch_size)
+                experience_states, experience_actions, experience_rewards, experience_next_states, \
+                experience_dones, experience_feature_vector, experience_next_feature_vector = \
+                    self.replay_buffer.sample(self.batch_size)
 
-                states = torch.FloatTensor(states).to(self.device)
-                next_states = torch.FloatTensor(next_states).to(self.device)
-                actions = torch.FloatTensor(actions).to(self.device)
-                rewards = torch.FloatTensor(rewards).unsqueeze(1).to(self.device)
-                dones = torch.FloatTensor(np.float32(dones)).unsqueeze(1).to(self.device)
+                experience_states = torch.FloatTensor(experience_states).to(self.device)
+                experience_next_states = torch.FloatTensor(experience_next_states).to(self.device)
+                experience_actions = torch.FloatTensor(experience_actions).to(self.device)
+                experience_rewards = torch.FloatTensor(experience_rewards).unsqueeze(1).to(self.device)
+                experience_dones = torch.FloatTensor(np.float32(experience_dones)).unsqueeze(1).to(self.device)
+                # experience_feature_vector = torch.FloatTensor(np.float32(experience_feature_vector)).to(self.device)
+                # experience_next_feature_vector = torch.FloatTensor(np.float32(experience_next_feature_vector)).to(self.device)
 
-                policy_loss = self.value_net(states, self.policy_net(states))
+                current_feature_vectors, current_actions = self.policy_net(experience_states)
+                policy_loss = self.value_net(current_feature_vectors, current_actions) # TODO : experience_feature_vectors
                 policy_loss = -policy_loss.mean()
 
-                next_actions = self.target_policy_net(next_states)
-                target_values = self.target_value_net(next_states, next_actions).detach()
-                expected_values = rewards + (1.0 - dones) * self.gamma * target_values
+                current_target_next_feature_vectors, current_target_next_actions = self.target_policy_net(experience_next_states)
+                target_values = self.target_value_net(current_target_next_feature_vectors, # TODO :
+                                                      current_target_next_actions).detach()
+                expected_values = experience_rewards + (1.0 - experience_dones) * self.gamma * target_values
                 # expected_value = torch.clamp(expected_value, min_value, max_value)
 
-                value = self.value_net(states, actions)
-                value_loss = self.value_criterion(value, expected_values)
+                current_values = self.value_net(current_feature_vectors.detach(), experience_actions) # TODO :
+                value_loss = self.value_criterion(current_values, expected_values)
 
                 self.policy_optimizer.zero_grad()
                 policy_loss.backward()
@@ -102,8 +108,10 @@ class DDPGAgent:
                     target_param.data.copy_(
                         target_param.data * (1.0 - self.soft_tau) + param.data * self.soft_tau
                     )
-                # actor_loss += policy_loss.data
-                # critic_loss += value_loss.data
+                # actor_loss += policy_loss.detach()
+                # critic_loss += value_loss.detach()
+
+        return actor_loss, critic_loss
 
     def save_model(self, path, notes):
         policy_state_to_save = self.target_policy_net.state_dict()
@@ -112,7 +120,7 @@ class DDPGAgent:
         torch.save(value_state_to_save, os.path.join(path, 'value-{}.pkl'.format(notes)))
 
     def load_model(self, path, notes):
-        print(os.path.join(path, 'policy-{}.pkl'.format(notes)))
+        # print(os.path.join(path, 'policy-{}.pkl'.format(notes)))
         policy_state_to_load = torch.load(os.path.join(path, 'policy-{}.pkl'.format(notes)))
         self.target_policy_net.load_state_dict(policy_state_to_load)
         self.policy_net.load_state_dict(policy_state_to_load)

@@ -47,7 +47,7 @@ class PolicyNetwork(nn.Module):
         feature_vector = x
 
         x = F.softsign(self.linear3(x))
-        return x, feature_vector
+        return feature_vector, x
 
 
 class ValueNetwork(nn.Module):
@@ -68,6 +68,7 @@ class ValueNetwork(nn.Module):
         self.linear3.bias.data.uniform_(-init_w, init_w)
 
     def forward(self, feature_vector, action):
+        # print(feature_vector.size())
         x = torch.cat([feature_vector, action], 1)
         x = F.relu(self.linear1(x))
         x = F.relu(self.linear2(x))
